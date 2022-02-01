@@ -3,7 +3,6 @@
 import os
 import sys
 
-from io import BytesIO
 from subprocess import run
 
 from matplotlib import interactive, is_interactive
@@ -17,50 +16,42 @@ if sys.flags.interactive:
     interactive(True)
 
 
-class FigureManagerICat(FigureManagerBase):
-
-    @classmethod
-    def _run(cls, *cmd):
-        def f(*args, output=True, **kwargs):
-            if output:
-                kwargs['capture_output'] = True
-                kwargs['text'] = True
-            r = run(cmd + args, **kwargs)
-            if output:
-                return r.stdout.rstrip()
-        return f
+class FigureManagerNotcurses(FigureManagerBase):
 
     def show(self):
 
-        icat = __class__._run('kitty', '+kitten', 'icat')
+        margins = '0'
 
-        if os.environ.get('MPLBACKEND_KITTY_SIZING', 'automatic') != 'manual':
-
-            tput = __class__._run('tput')
+        if os.environ.get('MPLBACKEND_NOTCURSES_SIZING', 'automatic') != 'manual':
 
             # gather terminal dimensions
-            rows = int(tput('lines'))
-            px = icat('--print-window-size')
-            px = list(map(int, px.split('x')))
+            # FIXME should use a less hacky way for getting width/height in pixels
+            info = run(['notcurses-info'], text=True, capture_output=True).stdout.rstrip()
+            dims = info.splitlines()[1].split(' ')
+            rows, height, width = map(int, [dims[0].split('[K')[-1], *dims[6].split('x')])
 
             # account for post-display prompt scrolling
             # 3 line shift for [\n, <matplotlib.axes…, >>>] after the figure
-            px[1] -= int(3*(px[1]/rows))
+            height -= int(3*(height/rows))
+            margins = '0,0,3,0' # format: top, right, bottom, left
 
-            # resize figure to terminal size & aspect ratio
             dpi = self.canvas.figure.dpi
-            self.canvas.figure.set_size_inches((px[0] / dpi, px[1] / dpi))
+            self.canvas.figure.set_size_inches((width / dpi, height / dpi))
 
-        with BytesIO() as buf:
-            self.canvas.figure.savefig(buf, format='png', facecolor='#888888')
-            icat('--align', 'left', output=False, input=buf.getbuffer())
+        r, w = os.pipe()
+        try:
+            with os.fdopen(w, 'wb') as wf:
+                self.canvas.figure.savefig(wf, format='png', facecolor='#888888')
+            run(['ncplayer', '-k', '-t0', '-q', '-m', margins, f'/dev/fd/{r}'], pass_fds=(r,))
+        finally:
+            os.close(r)
 
 
 @_Backend.export
-class _BackendICatAgg(_Backend):
+class _BackendNotcursesAgg(_Backend):
 
     FigureCanvas = FigureCanvasAgg
-    FigureManager = FigureManagerICat
+    FigureManager = FigureManagerNotcurses
 
     # Noop function instead of None signals that
     # this is an "interactive" backend

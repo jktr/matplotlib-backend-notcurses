@@ -1,1 +1,1 @@
-matplotlib-backend-kitty/__init__.py
+matplotlib-backend-notcurses/__init__.py
