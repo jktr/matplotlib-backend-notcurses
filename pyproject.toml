@@ -1,6 +1,6 @@
 [project]
 name = "matplotlib-backend-notcurses"
-version = "1.0.1"
+version = "1.0.2"
 description = "show matplotlib plots inline in most terminals, via notcurses"
 readme = "README.md"
 classifiers = [

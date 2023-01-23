@@ -47,10 +47,14 @@ class FigureManagerNotcurses(FigureManagerBase):
             os.close(r)
 
 
+class FigureCanvasNotcurses(FigureCanvasAgg):
+    manager_class = FigureManagerNotcurses
+
+
 @_Backend.export
 class _BackendNotcursesAgg(_Backend):
 
-    FigureCanvas = FigureCanvasAgg
+    FigureCanvas = FigureCanvasNotcurses
     FigureManager = FigureManagerNotcurses
 
     # Noop function instead of None signals that
