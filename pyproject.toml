@@ -1,3 +1,23 @@
+[project]
+name = "matplotlib-backend-notcurses"
+version = "1.0.1"
+description = "show matplotlib plots inline in most terminals, via notcurses"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
+    "Framework :: Matplotlib",
+    "Topic :: Terminals",
+]
+dependencies = [ "matplotlib" ]
+
+[project.urls]
+"Homepage" = "https://github.com/jktr/matplotlib-backend-notcurses"
+"Bug Tracker" = "https://github.com/jktr/matplotlib-backend-notcurses/issues"
+
 [build-system]
-requires = [ "setuptools", "wheel" ]
+requires = [ "setuptools>=61.0" ]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = [ "." ]
